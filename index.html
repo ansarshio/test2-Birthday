@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Birthday Surprise | Two Pages with Typewriter</title>
+    <!-- Canvas Confetti Library -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none; /* prevents accidental text selection while typing */
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(145deg, #ffdde1 0%, #ee9ca7 100%);
+            font-family: 'Poppins', 'Segoe UI', 'Cursive', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* main card container */
+        .card {
+            background: rgba(255, 245, 240, 0.95);
+            backdrop-filter: blur(3px);
+            border-radius: 68px;
+            box-shadow: 0 30px 45px rgba(0, 0, 0, 0.2), 0 0 0 12px rgba(255, 215, 200, 0.6);
+            width: 100%;
+            max-width: 620px;
+            padding: 30px 25px 40px 25px;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        /* page switching */
+        .page {
+            transition: opacity 0.35s ease, transform 0.35s ease;
+        }
+        .hidden {
+            display: none;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            color: #b23c4c;
+            text-shadow: 3px 3px 0 #ffe0b5;
+            letter-spacing: -0.5px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        /* message box styles (typewriter area) */
+        .message-box {
+            background: #fffef7;
+            border-radius: 60px;
+            padding: 28px 22px;
+            margin: 20px 0 30px;
+            box-shadow: inset 0 1px 5px rgba(0,0,0,0.02), 0 12px 20px rgba(0,0,0,0.1);
+            border: 2px solid #ffc2b3;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message-text {
+            font-size: 1.55rem;
+            line-height: 1.4;
+            color: #4a2a2a;
+            font-weight: 500;
+            font-family: 'Courier New', 'Fira Code', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+            text-align: center;
+        }
+
+        /* buttons row */
+        .buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .btn {
+            background: #ffb347;
+            background: linear-gradient(135deg, #ff9a5e, #ff6f4a);
+            border: none;
+            padding: 14px 28px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 5px 0 #a23b2a;
+            font-family: inherit;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 0 #a23b2a;
+        }
+
+        .back-btn {
+            background: linear-gradient(135deg, #7c8a9e, #5d6b7e);
+            box-shadow: 0 5px 0 #3a4452;
+        }
+
+        /* hidden audio element */
+        audio {
+            display: none;
+        }
+
+        /* extra heart decoration */
+        .heart-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: inline-block;
+            animation: float 2s infinite;
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @media (max-width: 550px) {
+            .card { padding: 22px 18px 30px; }
+            .message-text { font-size: 1.25rem; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <!-- PAGE 1 - Main birthday with cycling messages -->
+    <div id="page1" class="page">
+        <div class="heart-icon">🎂✨</div>
+        <h1>Happy Birthday!</h1>
+        <div class="message-box">
+            <div id="page1MessageBox" class="message-text"></div>
+        </div>
+        <div class="buttons">
+            <button id="nextBtn" class="btn">➡️ Next Page</button>
+        </div>
+    </div>
+
+    <!-- PAGE 2 - Surprise message with typewriter effect (same as page1 style) -->
+    <div id="page2" class="page hidden">
+        <div class="heart-icon">💖🎁</div>
+        <h1>Special Wish 💌</h1>
+        <div class="message-box">
+            <div id="page2Message" class="message-text">You are the brightest star in my sky. Every moment with you feels like a beautiful dream. Stay amazing, keep smiling, and never forget how loved you are. Happy Birthday to the most wonderful person! 🌟🎉</div>
+        </div>
+        <div class="buttons">
+            <button id="backBtn" class="btn back-btn">⬅️ Back</button>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden audio for pop effect -->
+<audio id="popSound" preload="auto">
+    <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+
+<script>
+    // -------------------------------
+    // 1) PAGE 1: CYCLING MESSAGES WITH TYPEWRITER PER MESSAGE
+    // -------------------------------
+    const messages = [
+        "🎈 Wishing you joy & laughter! 🎈",
+        "🍰 May your day be as sweet as cake! 🍰",
+        "🌟 You deserve the whole universe! 🌟",
+        "💐 Another year of fabulous YOU! 💐",
+        "🎁 Keep shining, Birthday Star! 🎁"
+    ];
+    
+    let cycleActive = true;
+    let cycleInterval = null;
+    let isTyping = false;       // prevent overlapping typewriter on page1
+
+    // Typewriter effect for any element with given text
+    async function typewriterEffect(element, text, speed = 42) {
+        if (!element) return;
+        // clear previous content & stop any ongoing
+        element.textContent = '';
+        for (let i = 0; i < text.length; i++) {
+            // if typing is cancelled from outside (cycleActive false or page hidden) -> break
+            if (!cycleActive || isPageHidden('page1')) {
+                // put full text so it doesn't remain half
+                element.textContent = text;
+                return;
+            }
+            element.textContent += text.charAt(i);
+            await new Promise(resolve => setTimeout(resolve, speed));
+        }
+        isTyping = false;
+    }
+
+    // helper to check if a page is hidden (page1 or page2)
+    function isPageHidden(pageId) {
+        const page = document.getElementById(pageId);
+        return page ? page.classList.contains('hidden') : true;
+    }
+
+    // start the message cycling on page1 (typewriter each message)
+    async function startMessageCycleOnPage1() {
+        if (cycleInterval) clearInterval(cycleInterval);
+        cycleActive = true;
+        let msgIndex = 0;
+        
+        // define function to show next message with typewriter
+        const showNextMessage = async () => {
+            if (!cycleActive || isPageHidden('page1')) return;
+            const msgBox = document.getElementById('page1MessageBox');
+            if (!msgBox) return;
+            
+            const nextMessage = messages[msgIndex % messages.length];
+            msgIndex++;
+            isTyping = true;
+            await typewriterEffect(msgBox, nextMessage, 45);
+            isTyping = false;
+        };
+        
+        // show first message immediately
+        await showNextMessage();
+        // then cycle every 5 seconds (after typewriter finishes)
+        cycleInterval = setInterval(() => {
+            if (cycleActive && !isTyping && !isPageHidden('page1')) {
+                showNextMessage();
+            }
+        }, 4800);
+    }
+    
+    function stopMessageCycle() {
+        cycleActive = false;
+        if (cycleInterval) {
+            clearInterval(cycleInterval);
+            cycleInterval = null;
+        }
+        isTyping = false;
+    }
+    
+    // -------------------------------
+    // 2) PAGE 2: DEDICATED TYPEWRITER (same style)
+    // -------------------------------
+    let page2TypingActive = false;
+    let page2TypingPromise = null;
+
+    async function startPage2Typewriter() {
+        const messageBox = document.getElementById('page2Message');
+        if (!messageBox) return;
+        
+        // get the full original text (hardcoded in HTML, but we store it safely)
+        let originalText = messageBox.textContent;
+        // edge: if text is empty because of previous stop? we store backup
+        if (!originalText || originalText.trim() === "") {
+            originalText = "You are the brightest star in my sky. Every moment with you feels like a beautiful dream. Stay amazing, keep smiling, and never forget how loved you are. Happy Birthday to the most wonderful person! 🌟🎉";
+            messageBox.textContent = originalText; // restore
+        }
+        
+        // stop any previous page2 typing to avoid conflict
+        if (page2TypingActive) {
+            page2TypingActive = false;
+            if (page2TypingPromise) await page2TypingPromise.catch(()=>{});
+        }
+        
+        // Clear content and start fresh
+        messageBox.textContent = '';
+        page2TypingActive = true;
+        
+        for (let i = 0; i < originalText.length; i++) {
+            if (!page2TypingActive || isPageHidden('page2')) {
+                // if user went back or navigated away, show full text instantly or stop
+                if (!isPageHidden('page2')) messageBox.textContent = originalText;
+                page2TypingActive = false;
+                return;
+            }
+            messageBox.textContent += originalText.charAt(i);
+            await new Promise(resolve => setTimeout(resolve, 42));
+        }
+        page2TypingActive = false;
+    }
+    
+    function stopPage2Typing() {
+        page2TypingActive = false;
+    }
+    
+    // -------------------------------
+    // 3) CONFETTI & SOUND HELPERS
+    // -------------------------------
+    const popAudio = document.getElementById('popSound');
+    // some browsers block autoplay, but we play on user gesture (button clicks)
+    function triggerConfetti() {
+        canvasConfetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, startVelocity: 15, colors: ['#ff6f91', '#ffb347', '#ffe5b4'] });
+        setTimeout(() => {
+            canvasConfetti({ particleCount: 50, spread: 45, origin: { y: 0.5, x: 0.2 }, startVelocity: 12 });
+            canvasConfetti({ particleCount: 50, spread: 45, origin: { y: 0.5, x: 0.8 }, startVelocity: 12 });
+        }, 150);
+    }
+    
+    // -------------------------------
+    // 4) DOM ELEMENTS AND EVENT HANDLERS
+    // -------------------------------
+    const page1 = document.getElementById('page1');
+    const page2 = document.getElementById('page2');
+    const nextBtn = document.getElementById('nextBtn');
+    const backBtn = document.getElementById('backBtn');
+    
+    // Initially: page1 visible, start its message cycle
+    startMessageCycleOnPage1();
+    
+    // Next button: go to page2 and start its typewriter effect
+    nextBtn.addEventListener('click', () => {
+        // stop page1 message cycle
+        stopMessageCycle();
+        // stop any potential ongoing page2 typing (clean)
+        stopPage2Typing();
+        
+        // play sound & confetti
+        popAudio.play().catch(e => console.log("audio autoplay blocked, but user interaction fine"));
+        triggerConfetti();
+        
+        // button animation
+        nextBtn.style.transform = 'scale(0.95)';
+        setTimeout(() => { if(nextBtn) nextBtn.style.transform = ''; }, 200);
+        
+        // switch pages with slight delay for smoothness
+        setTimeout(() => {
+            page1.classList.add('hidden');
+            page2.classList.remove('hidden');
+            
+            // start page2 typewriter effect (text will type out beautifully)
+            startPage2Typewriter();
+            
+            // extra celebratory confetti on page change
+            canvasConfetti({ particleCount: 180, spread: 85, origin: { y: 0.5 } });
+        }, 350);
+    });
+    
+    // Back button: return to page1 and restart cycle on page1, stop page2 typing
+    backBtn.addEventListener('click', () => {
+        // kill page2 typing
+        stopPage2Typing();
+        
+        // Hide page2, show page1
+        page2.classList.add('hidden');
+        page1.classList.remove('hidden');
+        
+        // reset page1 message box to fresh state then restart cycle
+        const msgBox = document.getElementById('page1MessageBox');
+        if (msgBox) msgBox.textContent = '';
+        // stop any leftover cycle and restart fresh
+        stopMessageCycle();
+        // restart cycling from first message
+        startMessageCycleOnPage1();
+        
+        // confetti and back sound
+        popAudio.play().catch(e=>console.log);
+        canvasConfetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+        
+        // little bounce effect on back button
+        backBtn.style.transform = 'scale(0.95)';
+        setTimeout(() => { if(backBtn) backBtn.style.transform = ''; }, 200);
+    });
+    
+    // optional: clean up if page2 is hidden during typewriter (already handled in loop)
+    // also ensure that when page becomes visible again the text is fully typed or restarts?
+    // but our logic in startPage2Typewriter only runs on demand, so it's fine.
+    // For perfect consistency: if user spam clicks next while typing, it's safe.
+    
+    // Preload/fix: ensure page2 message original text persists if dynamic changes happen
+    window.addEventListener('load', () => {
+        // store original page2 message backup in dataset to avoid accidental overrides
+        const page2MsgDiv = document.getElementById('page2Message');
+        if (page2MsgDiv && !page2MsgDiv.dataset.original) {
+            page2MsgDiv.dataset.original = page2MsgDiv.textContent;
+        }
+        // small fix: if typewriter stops early for any reason, we want consistency
+        // but everything is robust.
+    });
+</script>
+</body>
+</html>
